@@ -1,0 +1,22 @@
+version: "3.9"
+
+x-dry:
+  dbpass: &dbpassword
+    1
+
+services:
+  mysql:
+    image: mysql:8.2.0
+    ports:
+      - "8033:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: *dbpassword
+    command:
+      - --general_log=1
+      - --general_log_file=/var/www/mollie/var/mysql.log
+    volumes:
+      - mysql-persistent-datavolume:/var/lib/mysql
+      - ./mysql.log:/var/www/mollie/var/mysql.log
+
+volumes:
+  mysql-persistent-datavolume:
