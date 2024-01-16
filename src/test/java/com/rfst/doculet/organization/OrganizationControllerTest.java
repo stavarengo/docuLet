@@ -1,8 +1,8 @@
 package com.rfst.doculet.organization;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rfst.doculet.organization.exception.OrganizationAlreadyExistsException;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -12,13 +12,13 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Random;
 import java.util.random.RandomGenerator;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(OrganizationController.class)
 class OrganizationControllerTest {
@@ -103,5 +103,20 @@ class OrganizationControllerTest {
                 .andExpect(jsonPath("$.country").value(createdOrg.getCountry()))
                 .andExpect(jsonPath("$.crd").value(createdOrg.getCrd()))
                 .andExpect(jsonPath("$.id").value(createdOrg.getId()));
+    }
+
+    @Test
+    void whenThereIsAlreadyAnOrgWithSameCrdAndCountry_thenReturns409() throws Exception {
+        var org = new Organization();
+        org.setCountry("NL");
+        org.setCrd("123456789");
+
+        Mockito.when(organizationService.create(any(Organization.class)))
+                .thenThrow(OrganizationAlreadyExistsException.create(org));
+
+        mockMvc.perform(post("/organization")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(org)))
+                .andExpect(status().isConflict());
     }
 }
