@@ -1,0 +1,10 @@
+
+POST http://localhost:8081/organization
+Content-Type: application/json
+
+{
+  "country": "NL",
+  "crd": "12345678"
+}
+
+<> 2024-01-16T210546.201.json
