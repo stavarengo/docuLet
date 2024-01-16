@@ -17,4 +17,7 @@ public class OrganizationService {
     public Optional<Organization> byId(Long id) {
         return organizationRepository.findById(id);
     }
+    public Iterable<Organization> all() {
+        return organizationRepository.findAll();
+    }
 }
