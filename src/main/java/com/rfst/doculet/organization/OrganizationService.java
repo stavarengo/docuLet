@@ -20,4 +20,8 @@ public class OrganizationService {
     public Iterable<Organization> all() {
         return organizationRepository.findAll();
     }
+
+    public Organization create(Organization organization) {
+        return organizationRepository.save(organization);
+    }
 }

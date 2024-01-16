@@ -1,19 +1,24 @@
 package com.rfst.doculet.organization;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
+import java.util.random.RandomGenerator;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(OrganizationController.class)
 class OrganizationControllerTest {
@@ -21,16 +26,16 @@ class OrganizationControllerTest {
     MockMvc mockMvc;
     @MockBean
     OrganizationService organizationService;
+    @Autowired
+    ObjectMapper objectMapper;
 
     @Test
-    @WithMockUser
     void whenOrgDoesNotExist_thenReturns404() throws Exception {
         mockMvc.perform(get("/organization/1"))
                 .andExpect(status().isNotFound());
     }
 
     @Test
-    @WithMockUser
     void whenOrgExists_thenReturnsOrg() throws Exception {
         var org = new Organization();
         org.setId(1L);
@@ -48,7 +53,6 @@ class OrganizationControllerTest {
     }
 
     @Test
-    @WithMockUser
     void whenDbIsEmpty_ThenListAllOrgsReturnsEmptyList() throws Exception {
         mockMvc.perform(get("/organization"))
                 .andExpect(status().isOk())
@@ -56,7 +60,6 @@ class OrganizationControllerTest {
     }
 
     @Test
-    @WithMockUser
     void whenDbHasOrgs_ThenListAllOrgsReturnsAllOrgs() throws Exception {
         var org1 = new Organization();
         org1.setId(1L);
@@ -77,5 +80,28 @@ class OrganizationControllerTest {
                 .andExpect(jsonPath("$[1].crd").value(org2.getCrd()))
                 .andExpect(jsonPath("$[1].id").value(org2.getId()));
 
+    }
+
+    @Test
+    void createOrganization() throws Exception {
+        var orgForRequest = new Organization();
+        orgForRequest.setCountry("NL");
+        orgForRequest.setCrd("123456789");
+
+        var createdOrg = new Organization();
+        createdOrg.setId(RandomGenerator.getDefault().nextLong());
+        createdOrg.setCountry(orgForRequest.getCountry());
+        createdOrg.setCrd(orgForRequest.getCrd());
+
+        Mockito.when(organizationService.create(any(Organization.class)))
+                .thenReturn(createdOrg);
+
+        mockMvc.perform(post("/organization")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(orgForRequest)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.country").value(createdOrg.getCountry()))
+                .andExpect(jsonPath("$.crd").value(createdOrg.getCrd()))
+                .andExpect(jsonPath("$.id").value(createdOrg.getId()));
     }
 }
